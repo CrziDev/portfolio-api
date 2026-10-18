@@ -1,0 +1,33 @@
+# The API behind its own Caddy. Another app on the VPS already holds 443, so Caddy serves HTTPS on
+# 8443 and uses 80 only to obtain its certificate; the API is reachable only on the compose network.
+name: portfolio-api
+
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?set ADMIN_PASSWORD in .env}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:5500}
+    volumes:
+      - portfolio-data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      API_ADDRESS: ${API_ADDRESS:?set API_ADDRESS in .env}
+    ports:
+      - "80:80"
+      - "8443:8443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
+volumes:
+  portfolio-data:
+  caddy-data:
+  caddy-config:
