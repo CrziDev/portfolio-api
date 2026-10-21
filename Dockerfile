@@ -1,10 +1,12 @@
-FROM golang:1.26-alpine AS build
+# The build stage runs natively and cross-compiles, so multi-arch builds need no emulation.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS build
+ARG TARGETOS TARGETARCH
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY main.go ./
 COPY internal ./internal
-RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /portfolio-api .
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o /portfolio-api .
 
 FROM alpine:3.22
 RUN adduser -D -H app && mkdir /data && chown app /data

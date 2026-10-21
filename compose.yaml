@@ -4,6 +4,8 @@ name: portfolio-api
 
 services:
   api:
+    # Pulled from GitHub Container Registry; `docker compose up --build` still builds locally.
+    image: ghcr.io/crzidev/portfolio-api:${API_TAG:-latest}
     build: .
     restart: unless-stopped
     environment:
