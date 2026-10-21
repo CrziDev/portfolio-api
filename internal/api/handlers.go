@@ -80,3 +80,27 @@ func deleteHandler(remove func(context.Context, int64) error) http.HandlerFunc {
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
+// ---- Stars: any visitor can star a project, once per browser ----
+
+type starBody struct {
+	Visitor string `json:"visitor"` // a random ID the visitor's browser keeps
+	Starred bool   `json:"starred"`
+}
+
+func (s *server) starProject(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var body starBody
+	if !readValid(w, r, &body, validateStar) {
+		return
+	}
+	stars, err := s.Store.SetStar(r.Context(), id, body.Visitor, body.Starred)
+	if err != nil {
+		storeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"stars": stars, "starred": body.Starred})
+}

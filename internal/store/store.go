@@ -33,7 +33,7 @@ type execer interface {
 
 // Open opens the database at path, creating the tables and seeding it if it's new.
 func Open(ctx context.Context, path string) (*Store, error) {
-	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)")
+	db, err := sql.Open("sqlite", path+"?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)")
 	if err != nil {
 		return nil, err
 	}
@@ -120,11 +120,13 @@ func (s *Store) Portfolio(ctx context.Context) (Portfolio, error) {
 	}
 
 	if p.Projects, err = queryList(ctx, s.db,
-		`SELECT id, name, type, language, description, stack, image, url FROM projects ORDER BY position, id`,
+		`SELECT id, name, type, language, description, stack, image, url,
+			(SELECT COUNT(*) FROM project_stars WHERE project_id = projects.id)
+		FROM projects ORDER BY position, id`,
 		func(rows *sql.Rows, project *Project) error {
 			var stack string
 			if err := rows.Scan(&project.ID, &project.Name, &project.Type, &project.Language,
-				&project.Description, &stack, &project.Image, &project.URL); err != nil {
+				&project.Description, &stack, &project.Image, &project.URL, &project.Stars); err != nil {
 				return err
 			}
 			return json.Unmarshal([]byte(stack), &project.Stack)
@@ -233,6 +235,30 @@ func (s *Store) UpdateProject(ctx context.Context, id int64, p *Project) error {
 
 func (s *Store) DeleteProject(ctx context.Context, id int64) error {
 	return updated(s.db.ExecContext(ctx, `DELETE FROM projects WHERE id = ?`, id))
+}
+
+// SetStar adds or removes one visitor's star on a project and returns the project's star count.
+// Starring twice, or unstarring a project the visitor hasn't starred, changes nothing.
+func (s *Store) SetStar(ctx context.Context, projectID int64, visitor string, starred bool) (int, error) {
+	var exists bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM projects WHERE id = ?)`, projectID).Scan(&exists); err != nil {
+		return 0, err
+	}
+	if !exists {
+		return 0, ErrNotFound
+	}
+
+	query := `DELETE FROM project_stars WHERE project_id = ? AND visitor = ?`
+	if starred {
+		query = `INSERT OR IGNORE INTO project_stars (project_id, visitor) VALUES (?, ?)`
+	}
+	if _, err := s.db.ExecContext(ctx, query, projectID, hashToken(visitor)); err != nil {
+		return 0, err
+	}
+
+	var count int
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM project_stars WHERE project_id = ?`, projectID).Scan(&count)
+	return count, err
 }
 
 func (s *Store) InsertExperience(ctx context.Context, e *Experience) error {

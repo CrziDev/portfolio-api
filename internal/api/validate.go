@@ -67,6 +67,14 @@ func validateExperience(e *store.Experience) error {
 	return nil
 }
 
+// validateStar checks the visitor ID looks like the UUID the pages generate.
+func validateStar(b *starBody) error {
+	if len(b.Visitor) < 16 || len(b.Visitor) > 64 || strings.Trim(b.Visitor, "0123456789abcdefABCDEF-") != "" {
+		return errors.New("visitor must be the browser's random ID")
+	}
+	return nil
+}
+
 func trim(fields ...*string) {
 	for _, field := range fields {
 		*field = strings.TrimSpace(*field)

@@ -48,6 +48,13 @@ CREATE TABLE IF NOT EXISTS experience (
 	highlights TEXT NOT NULL DEFAULT '[]'
 );
 
+-- One row per visitor per starred project; `visitor` is a hash of the ID the visitor's browser made up.
+CREATE TABLE IF NOT EXISTS project_stars (
+	project_id INTEGER NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+	visitor    TEXT NOT NULL,
+	PRIMARY KEY (project_id, visitor)
+);
+
 CREATE TABLE IF NOT EXISTS sessions (
 	token_hash TEXT PRIMARY KEY,
 	expires_at INTEGER NOT NULL

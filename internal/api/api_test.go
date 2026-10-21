@@ -163,6 +163,41 @@ func TestProjectCRUD(t *testing.T) {
 	expectStatus(t, api.do("PUT", path, token, created), http.StatusNotFound)
 }
 
+func TestStars(t *testing.T) {
+	api := newTestAPI(t)
+	alice, bob := "0d6c9a3e-6b4f-4c55-9a1e-2f7b8c1d0e11", "7f3e2b1a-9c8d-4e6f-a5b4-c3d2e1f0a9b8"
+
+	var p store.Portfolio
+	decode(t, api.do("GET", "/api/portfolio", "", nil), &p)
+	path := "/api/projects/" + strconv.FormatInt(p.Projects[0].ID, 10) + "/star"
+
+	star := func(visitor string, starred bool, want int) {
+		t.Helper()
+		rec := api.do("POST", path, "", map[string]any{"visitor": visitor, "starred": starred})
+		expectStatus(t, rec, http.StatusOK)
+		var body struct{ Stars int }
+		decode(t, rec, &body)
+		if body.Stars != want {
+			t.Fatalf("stars = %d, want %d", body.Stars, want)
+		}
+	}
+	star(alice, true, 1)
+	star(alice, true, 1) // starring twice counts once
+	star(bob, true, 2)
+	star(alice, false, 1)
+
+	decode(t, api.do("GET", "/api/portfolio", "", nil), &p)
+	if p.Projects[0].Stars != 1 {
+		t.Fatalf("portfolio stars = %d, want 1", p.Projects[0].Stars)
+	}
+
+	expectStatus(t, api.do("POST", path, "", map[string]any{"visitor": "x", "starred": true}), http.StatusBadRequest)
+	expectStatus(t, api.do("POST", "/api/projects/9999/star", "", map[string]any{"visitor": alice, "starred": true}), http.StatusNotFound)
+
+	// A starred project can still be deleted; its stars go with it.
+	expectStatus(t, api.do("DELETE", strings.TrimSuffix(path, "/star"), api.login(), nil), http.StatusNoContent)
+}
+
 func TestValidation(t *testing.T) {
 	api := newTestAPI(t)
 	token := api.login()

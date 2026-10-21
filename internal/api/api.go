@@ -40,6 +40,7 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("POST /api/projects", s.admin(createHandler(validateProject, st.InsertProject)))
 	mux.HandleFunc("PUT /api/projects/{id}", s.admin(updateHandler(validateProject, st.UpdateProject)))
 	mux.HandleFunc("DELETE /api/projects/{id}", s.admin(deleteHandler(st.DeleteProject)))
+	mux.HandleFunc("POST /api/projects/{id}/star", s.starProject) // open to visitors
 
 	mux.HandleFunc("POST /api/skills", s.admin(createHandler(validateSkill, st.InsertSkill)))
 	mux.HandleFunc("PUT /api/skills/{id}", s.admin(updateHandler(validateSkill, st.UpdateSkill)))

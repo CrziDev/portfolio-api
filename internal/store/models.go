@@ -47,6 +47,7 @@ type Project struct {
 	Stack       []string `json:"stack"`
 	Image       string   `json:"image"`
 	URL         string   `json:"url"`
+	Stars       int      `json:"stars"` // read-only: set by visitors through SetStar, ignored on save
 }
 
 type Experience struct {
