@@ -1,5 +1,7 @@
 package store
 
+import "time"
+
 // Shapes match the PORTFOLIO object the pages render, so GET /api/portfolio
 // can be handed to the front end as is.
 
@@ -44,10 +46,20 @@ type Project struct {
 	Type        string   `json:"type"`
 	Language    string   `json:"language"`
 	Description string   `json:"description"`
+	Details     string   `json:"details"` // the longer write-up in the project preview; blank lines split paragraphs
 	Stack       []string `json:"stack"`
 	Image       string   `json:"image"`
+	Gallery     []string `json:"gallery"` // more screenshots for the preview, after Image
 	URL         string   `json:"url"`
 	Stars       int      `json:"stars"` // read-only: set by visitors through SetStar, ignored on save
+}
+
+// Comment is a visitor's comment on a project.
+type Comment struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Body      string    `json:"body"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type Experience struct {

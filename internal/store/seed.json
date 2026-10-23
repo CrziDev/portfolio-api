@@ -70,118 +70,115 @@
   ],
   "projects": [
     {
-      "name": "realestate-erp",
+      "name": "Marrea Apps",
       "type": "Work",
-      "language": "PHP",
-      "description": "34-module Laravel ERP replacing spreadsheet workflows for 50+ users across 11 departments.",
+      "language": "Laravel",
+      "description": "ERP system built for one of the largest real estate and construction companies in Bayugan City.",
+      "details": "Marrea Apps turns the company's manual, paper and spreadsheet processes into a single custom system. It covers accounting (payment requests, billing, collections), sales and accounts, unit management, inventory, purchasing and HR, and supports construction and equipment operations. Dashboards and reports give each department a live view of its own numbers.\n\nI lead a small team of developers and have worked across every module, from sales and units to inventory, accounting and HR. I oversee the whole development process: architecture, code review, server management and deployment.",
       "stack": [
         "Laravel",
+        "Livewire",
+        "React",
+        "Alpine.js",
         "Filament",
-        "MySQL"
+        "MySQL",
+        "Forge / DO",
+        "GitHub Actions"
       ],
-      "image": null,
+      "image": "/uploads/realestate-erp-cover.webp",
+      "gallery": [
+        "/uploads/realestate-erp-01-site-plan-map.webp",
+        "/uploads/realestate-erp-02-dashboard.webp",
+        "/uploads/realestate-erp-03-equipment-insights.webp",
+        "/uploads/realestate-erp-04-sales-reports.webp",
+        "/uploads/realestate-erp-05-hr-kpi-dashboard.webp",
+        "/uploads/realestate-erp-06-org-chart.webp",
+        "/uploads/realestate-erp-07-inventory-reports.webp"
+      ],
       "url": null
     },
     {
-      "name": "igaming-platform",
+      "name": "Playmevo",
       "type": "Freelance",
       "language": "Go",
-      "description": "Go and PostgreSQL backend with an idempotent central wallet and game provider integration.",
+      "description": "Working prototype of a gaming platform built for a foreign client, with fully custom games.",
+      "details": "Playmevo is a gaming platform where players can play, deposit and cash out currency. It has a game lobby, fully implemented custom games such as Plinko with switchable themes, a player wallet, and an admin panel for managing players, balances and games.\n\nSecurity was a core requirement. Everything runs through one central wallet, and every bet, win and refund is an idempotent transaction, so a retried game provider callback never credits a balance twice. Balance changes are atomic database transactions, game outcomes are decided on the server rather than the client, and every request is authenticated and validated before it touches the wallet.\n\nThis project uses mock data and no actual money is involved.",
       "stack": [
         "Go",
         "PostgreSQL",
         "React"
       ],
-      "image": null,
-      "url": null
-    },
-    {
-      "name": "ai-medisina",
-      "type": "Freelance",
-      "language": "Python",
-      "description": "Medical chatbot with Gemini guardrails and a Roboflow model that checks image authenticity.",
-      "stack": [
-        "Flask",
-        "JavaScript",
-        "Gemini"
+      "image": "/uploads/igaming-platform-cover.webp",
+      "gallery": [
+        "/uploads/igaming-platform-01-plinko.webp",
+        "/uploads/igaming-platform-02-lobby.webp",
+        "/uploads/igaming-platform-03-plinko-billiards.webp",
+        "/uploads/igaming-platform-04-plinko-tropical.webp",
+        "/uploads/igaming-platform-05-wallet.webp",
+        "/uploads/igaming-platform-06-admin.webp"
       ],
-      "image": null,
       "url": null
     },
     {
-      "name": "pos",
+      "name": "POS and Inventory System",
       "type": "Personal",
-      "language": "PHP",
-      "description": "Point-of-sale system built with Laravel and Blade.",
+      "language": "Laravel",
+      "description": "POS and inventory system I built for a local business in Panabo City.",
+      "details": "I built this for a local business in Panabo City that has more than one branch. Cashiers use it to ring up sales, print receipts, and handle returns and replacements.\n\nThe back office tracks stock per branch, orders from suppliers, and moves stock between branches. Every stock change is logged. The owner can see sales by branch and print sales, inventory and financial reports.",
       "stack": [
         "Laravel",
-        "PHP",
+        "Filament",
+        "Alpine.js",
+        "Livewire",
         "Blade"
       ],
-      "image": null,
+      "image": "/uploads/pos-cover.webp",
+      "gallery": [
+        "/uploads/pos-01-pos-panel.webp",
+        "/uploads/pos-02-dashboard-top.webp",
+        "/uploads/pos-03-supplies.webp",
+        "/uploads/pos-04-sales.webp",
+        "/uploads/pos-05-purchase-orders.webp",
+        "/uploads/pos-06-employees.webp",
+        "/uploads/pos-07-financial-statement.webp",
+        "/uploads/pos-08-stocks.webp",
+        "/uploads/pos-09-stock-transfers.webp",
+        "/uploads/pos-10-inventory-ledgers.webp"
+      ],
       "url": "https://github.com/CrziDev/POS"
     },
     {
-      "name": "insurance-system",
-      "type": "Personal",
-      "language": "PHP",
-      "description": "Insurance management system built with Laravel and Blade.",
-      "stack": [
-        "Laravel",
-        "PHP",
-        "Blade"
-      ],
-      "image": null,
-      "url": "https://github.com/CrziDev/insurance-system"
-    },
-    {
-      "name": "supply-chain",
-      "type": "Personal",
-      "language": "PHP",
-      "description": "Supply chain management app built with Laravel and Blade.",
-      "stack": [
-        "Laravel",
-        "PHP",
-        "Blade"
-      ],
-      "image": null,
-      "url": "https://github.com/CrziDev/supply-chain"
-    },
-    {
-      "name": "priomed",
-      "type": "Personal",
-      "language": "PHP",
-      "description": "Laravel and Blade web application.",
-      "stack": [
-        "Laravel",
-        "PHP",
-        "Blade"
-      ],
-      "image": null,
-      "url": "https://github.com/CrziDev/Priomed"
-    },
-    {
-      "name": "project-sky",
+      "name": "Stash",
       "type": "Personal",
       "language": "JavaScript",
-      "description": "Browser project written in vanilla JavaScript.",
+      "description": "Firefox add-on that saves my links, text and files so I don't have to hunt for them.",
+      "details": "- Store links, text, files\n- Auto fill forms",
       "stack": [
         "JavaScript",
-        "HTML"
+        "HTML",
+        "CSS",
+        "WebExtensions"
       ],
-      "image": null,
-      "url": "https://github.com/CrziDev/project-sky"
+      "image": "/uploads/stash-00-cover.webp",
+      "gallery": [
+        "/uploads/stash-01-overview.webp"
+      ],
+      "url": "https://github.com/CrziDev/stash"
     },
     {
-      "name": "go-rand",
+      "name": "Frame kit",
       "type": "Personal",
-      "language": "Go",
-      "description": "Small Go utility for generating random values.",
+      "language": "JavaScript",
+      "description": "A small CLI that turns plain screenshots into polished images in a browser window.",
+      "details": "- Convert plain screenshots into polished, browser-style images\n- Skill support to automatically produce images for a whole project",
       "stack": [
-        "Go"
+        "Node.js",
+        "CLI",
+        "Claude Code Skill"
       ],
-      "image": null,
-      "url": "https://github.com/CrziDev/go-rand"
+      "image": "",
+      "gallery": [],
+      "url": null
     }
   ],
   "experience": [

@@ -103,6 +103,7 @@ func TestWritesNeedToken(t *testing.T) {
 		{"POST", "/api/skills"},
 		{"DELETE", "/api/experience/1"},
 		{"POST", "/api/uploads"},
+		{"DELETE", "/api/comments/1"},
 		{"POST", "/api/logout"},
 	} {
 		for _, token := range []string{"", "not-a-real-token"} {
@@ -198,6 +199,77 @@ func TestStars(t *testing.T) {
 	expectStatus(t, api.do("DELETE", strings.TrimSuffix(path, "/star"), api.login(), nil), http.StatusNoContent)
 }
 
+func TestComments(t *testing.T) {
+	api := newTestAPI(t)
+
+	var p store.Portfolio
+	decode(t, api.do("GET", "/api/portfolio", "", nil), &p)
+	path := "/api/projects/" + strconv.FormatInt(p.Projects[0].ID, 10) + "/comments"
+
+	var comments []store.Comment
+	decode(t, api.do("GET", path, "", nil), &comments)
+	if comments == nil || len(comments) != 0 {
+		t.Fatalf("comments on a new project = %v, want []", comments)
+	}
+
+	rec := api.do("POST", path, "", map[string]string{"name": "  Kim ", "body": " Nice work! "})
+	expectStatus(t, rec, http.StatusCreated)
+	var first store.Comment
+	decode(t, rec, &first)
+	if first.ID == 0 || first.Name != "Kim" || first.Body != "Nice work!" || first.CreatedAt.IsZero() {
+		t.Fatalf("created = %+v", first)
+	}
+	expectStatus(t, api.do("POST", path, "", map[string]string{"body": "Second"}), http.StatusCreated)
+
+	decode(t, api.do("GET", path, "", nil), &comments)
+	if len(comments) != 2 || comments[0].ID != first.ID || comments[1].Name != "Anonymous" {
+		t.Fatalf("comments = %+v, want Kim's then Anonymous's", comments)
+	}
+
+	for name, body := range map[string]map[string]string{
+		"empty":     {"body": "  "},
+		"long body": {"body": strings.Repeat("x", 1001)},
+		"long name": {"name": strings.Repeat("x", 41), "body": "hi"},
+	} {
+		if rec := api.do("POST", path, "", body); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s: status = %d, want 400", name, rec.Code)
+		}
+	}
+	expectStatus(t, api.do("GET", "/api/projects/9999/comments", "", nil), http.StatusNotFound)
+	expectStatus(t, api.do("POST", "/api/projects/9999/comments", "", map[string]string{"body": "hi"}), http.StatusNotFound)
+
+	token := api.login()
+	commentPath := "/api/comments/" + strconv.FormatInt(first.ID, 10)
+	expectStatus(t, api.do("DELETE", commentPath, token, nil), http.StatusNoContent)
+	expectStatus(t, api.do("DELETE", commentPath, token, nil), http.StatusNotFound)
+	decode(t, api.do("GET", path, "", nil), &comments)
+	if len(comments) != 1 {
+		t.Fatalf("after delete, %d comments, want 1", len(comments))
+	}
+}
+
+func TestCommentRateLimit(t *testing.T) {
+	api := newTestAPI(t)
+	post := func(ip string) int {
+		req := httptest.NewRequest("POST", "/api/projects/1/comments", strings.NewReader(`{"body":"hi"}`))
+		req.Header.Set("X-Forwarded-For", ip)
+		rec := httptest.NewRecorder()
+		api.handler.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	for i := range 5 {
+		if code := post("203.0.113.1"); code != http.StatusCreated {
+			t.Fatalf("comment %d: status = %d, want 201", i+1, code)
+		}
+	}
+	if code := post("203.0.113.1"); code != http.StatusTooManyRequests {
+		t.Errorf("sixth comment: status = %d, want 429", code)
+	}
+	if code := post("203.0.113.2"); code != http.StatusCreated {
+		t.Errorf("another visitor: status = %d, want 201", code)
+	}
+}
+
 func TestValidation(t *testing.T) {
 	api := newTestAPI(t)
 	token := api.login()
@@ -207,6 +279,8 @@ func TestValidation(t *testing.T) {
 		"javascript url": {Name: "x", URL: "javascript:alert(1)"},
 		"data image":     {Name: "x", Image: "data:image/png;base64,AAAA"},
 		"relative image": {Name: "x", Image: "/uploads/../portfolio.db"},
+		"gallery image":  {Name: "x", Gallery: []string{"/uploads/a.png", "javascript:alert(1)"}},
+		"large gallery":  {Name: "x", Gallery: strings.Split(strings.Repeat("/uploads/a.png,", 21), ",")[:21]},
 	} {
 		if rec := api.do("POST", "/api/projects", token, body); rec.Code != http.StatusBadRequest {
 			t.Errorf("%s: status = %d, want 400", name, rec.Code)

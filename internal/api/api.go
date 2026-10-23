@@ -1,10 +1,11 @@
 // Package api serves the portfolio's content as JSON, lets the signed-in
-// owner edit it, and stores uploaded images.
+// owner edit it, stores uploaded images, and takes visitors' stars and comments.
 package api
 
 import (
 	"net/http"
 	"slices"
+	"time"
 
 	"portfolio-api/internal/store"
 )
@@ -18,11 +19,12 @@ type Config struct {
 
 type server struct {
 	Config
+	commentLimit *rateLimit
 }
 
 // New returns the API's HTTP handler.
 func New(c Config) http.Handler {
-	s := &server{c}
+	s := &server{Config: c, commentLimit: newRateLimit(5, 10*time.Minute)}
 	return withCORS(c.Origins, s.routes())
 }
 
@@ -41,6 +43,9 @@ func (s *server) routes() http.Handler {
 	mux.HandleFunc("PUT /api/projects/{id}", s.admin(updateHandler(validateProject, st.UpdateProject)))
 	mux.HandleFunc("DELETE /api/projects/{id}", s.admin(deleteHandler(st.DeleteProject)))
 	mux.HandleFunc("POST /api/projects/{id}/star", s.starProject) // open to visitors
+	mux.HandleFunc("GET /api/projects/{id}/comments", s.listComments)
+	mux.HandleFunc("POST /api/projects/{id}/comments", s.postComment) // open to visitors, rate-limited
+	mux.HandleFunc("DELETE /api/comments/{id}", s.admin(deleteHandler(st.DeleteComment)))
 
 	mux.HandleFunc("POST /api/skills", s.admin(createHandler(validateSkill, st.InsertSkill)))
 	mux.HandleFunc("PUT /api/skills/{id}", s.admin(updateHandler(validateSkill, st.UpdateSkill)))

@@ -4,10 +4,13 @@ package store
 import (
 	"context"
 	"database/sql"
-	_ "embed"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 
 	_ "modernc.org/sqlite"
 )
@@ -21,6 +24,18 @@ var schema string
 //
 //go:embed seed.json
 var seedJSON []byte
+
+// The images seed.json refers to, copied into the upload directory by CopySeedUploads.
+//
+//go:embed seed-uploads
+var seedUploads embed.FS
+
+// Columns added after a table was first created. CREATE TABLE IF NOT EXISTS leaves an
+// existing table as it is, so Open adds these to older databases.
+var addedColumns = []struct{ table, column, definition string }{
+	{"projects", "details", "TEXT NOT NULL DEFAULT ''"},
+	{"projects", "gallery", "TEXT NOT NULL DEFAULT '[]'"},
+}
 
 type Store struct {
 	db *sql.DB
@@ -45,6 +60,10 @@ func Open(ctx context.Context, path string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("create schema: %w", err)
 	}
+	if err := s.addColumns(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("add columns: %w", err)
+	}
 	if err := s.seed(ctx); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("seed: %w", err)
@@ -53,6 +72,46 @@ func Open(ctx context.Context, path string) (*Store, error) {
 }
 
 func (s *Store) Close() error { return s.db.Close() }
+
+func (s *Store) addColumns(ctx context.Context) error {
+	for _, c := range addedColumns {
+		var exists bool
+		if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM pragma_table_info(?) WHERE name = ?)`,
+			c.table, c.column).Scan(&exists); err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
+		if _, err := s.db.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE %s ADD COLUMN %s %s`, c.table, c.column, c.definition)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// CopySeedUploads writes the seed's images into dir. Files already there are left alone,
+// so it's safe to run on every start.
+func CopySeedUploads(dir string) error {
+	entries, err := fs.ReadDir(seedUploads, "seed-uploads")
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		path := filepath.Join(dir, entry.Name())
+		if _, err := os.Stat(path); err == nil {
+			continue
+		}
+		data, err := seedUploads.ReadFile("seed-uploads/" + entry.Name())
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, data, 0o644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 // seed fills an empty database from seed.json.
 func (s *Store) seed(ctx context.Context) error {
@@ -120,16 +179,19 @@ func (s *Store) Portfolio(ctx context.Context) (Portfolio, error) {
 	}
 
 	if p.Projects, err = queryList(ctx, s.db,
-		`SELECT id, name, type, language, description, stack, image, url,
+		`SELECT id, name, type, language, description, details, stack, image, gallery, url,
 			(SELECT COUNT(*) FROM project_stars WHERE project_id = projects.id)
 		FROM projects ORDER BY position, id`,
 		func(rows *sql.Rows, project *Project) error {
-			var stack string
-			if err := rows.Scan(&project.ID, &project.Name, &project.Type, &project.Language,
-				&project.Description, &stack, &project.Image, &project.URL, &project.Stars); err != nil {
+			var stack, gallery string
+			if err := rows.Scan(&project.ID, &project.Name, &project.Type, &project.Language, &project.Description,
+				&project.Details, &stack, &project.Image, &gallery, &project.URL, &project.Stars); err != nil {
 				return err
 			}
-			return json.Unmarshal([]byte(stack), &project.Stack)
+			if err := json.Unmarshal([]byte(stack), &project.Stack); err != nil {
+				return err
+			}
+			return json.Unmarshal([]byte(gallery), &project.Gallery)
 		}); err != nil {
 		return p, err
 	}
@@ -149,10 +211,10 @@ func (s *Store) Portfolio(ctx context.Context) (Portfolio, error) {
 	return p, err
 }
 
-// queryList runs query and scans each row with scan. It returns an empty
+// queryList runs query with args and scans each row with scan. It returns an empty
 // (not nil) slice for no rows, so the JSON is [] rather than null.
-func queryList[T any](ctx context.Context, db *sql.DB, query string, scan func(*sql.Rows, *T) error) ([]T, error) {
-	rows, err := db.QueryContext(ctx, query)
+func queryList[T any](ctx context.Context, db *sql.DB, query string, scan func(*sql.Rows, *T) error, args ...any) ([]T, error) {
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -219,18 +281,19 @@ func (s *Store) InsertProject(ctx context.Context, p *Project) error {
 
 func insertProject(ctx context.Context, db execer, p *Project) (err error) {
 	p.ID, err = insertedID(db.ExecContext(ctx, `
-		INSERT INTO projects (position, name, type, language, description, stack, image, url)
-		VALUES ((SELECT COALESCE(MAX(position), 0) + 1 FROM projects), ?, ?, ?, ?, ?, ?, ?)`,
-		p.Name, p.Type, p.Language, p.Description, toJSON(p.Stack), p.Image, p.URL))
+		INSERT INTO projects (position, name, type, language, description, details, stack, image, gallery, url)
+		VALUES ((SELECT COALESCE(MAX(position), 0) + 1 FROM projects), ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		p.Name, p.Type, p.Language, p.Description, p.Details, toJSON(p.Stack), p.Image, toJSON(p.Gallery), p.URL))
 	return err
 }
 
 func (s *Store) UpdateProject(ctx context.Context, id int64, p *Project) error {
 	p.ID = id
 	return updated(s.db.ExecContext(ctx, `
-		UPDATE projects SET name = ?, type = ?, language = ?, description = ?, stack = ?, image = ?, url = ?
+		UPDATE projects SET name = ?, type = ?, language = ?, description = ?, details = ?, stack = ?, image = ?,
+			gallery = ?, url = ?
 		WHERE id = ?`,
-		p.Name, p.Type, p.Language, p.Description, toJSON(p.Stack), p.Image, p.URL, id))
+		p.Name, p.Type, p.Language, p.Description, p.Details, toJSON(p.Stack), p.Image, toJSON(p.Gallery), p.URL, id))
 }
 
 func (s *Store) DeleteProject(ctx context.Context, id int64) error {
@@ -240,12 +303,8 @@ func (s *Store) DeleteProject(ctx context.Context, id int64) error {
 // SetStar adds or removes one visitor's star on a project and returns the project's star count.
 // Starring twice, or unstarring a project the visitor hasn't starred, changes nothing.
 func (s *Store) SetStar(ctx context.Context, projectID int64, visitor string, starred bool) (int, error) {
-	var exists bool
-	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM projects WHERE id = ?)`, projectID).Scan(&exists); err != nil {
+	if err := s.projectExists(ctx, projectID); err != nil {
 		return 0, err
-	}
-	if !exists {
-		return 0, ErrNotFound
 	}
 
 	query := `DELETE FROM project_stars WHERE project_id = ? AND visitor = ?`
@@ -259,6 +318,18 @@ func (s *Store) SetStar(ctx context.Context, projectID int64, visitor string, st
 	var count int
 	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM project_stars WHERE project_id = ?`, projectID).Scan(&count)
 	return count, err
+}
+
+// projectExists returns ErrNotFound when there's no project with the ID.
+func (s *Store) projectExists(ctx context.Context, id int64) error {
+	var exists bool
+	if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM projects WHERE id = ?)`, id).Scan(&exists); err != nil {
+		return err
+	}
+	if !exists {
+		return ErrNotFound
+	}
+	return nil
 }
 
 func (s *Store) InsertExperience(ctx context.Context, e *Experience) error {

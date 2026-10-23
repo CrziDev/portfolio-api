@@ -80,7 +80,8 @@ func (s *server) upload(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, map[string]string{"url": "/uploads/" + name})
 }
 
-// serveUpload serves one uploaded file. Names are random and never reused, so browsers may cache them for good.
+// serveUpload serves one uploaded file. Uploads get random names that are never reused, and seed images are
+// renamed rather than replaced when they change, so browsers may cache them for good.
 func (s *server) serveUpload(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	if name != filepath.Base(name) || strings.HasPrefix(name, ".") {

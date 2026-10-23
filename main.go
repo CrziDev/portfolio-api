@@ -43,6 +43,10 @@ func main() {
 	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
 		log.Fatal(err)
 	}
+	// The seed's screenshots, which seed.json refers to as /uploads/<project>-….webp.
+	if err := store.CopySeedUploads(uploadDir); err != nil {
+		log.Fatal(err)
+	}
 	st, err := store.Open(ctx, filepath.Join(dataDir, "portfolio.db"))
 	if err != nil {
 		log.Fatal(err)

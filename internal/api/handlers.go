@@ -104,3 +104,44 @@ func (s *server) starProject(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"stars": stars, "starred": body.Starred})
 }
+
+// ---- Comments: any visitor can comment on a project; the owner can delete comments ----
+
+type commentBody struct {
+	Name string `json:"name"` // optional; "Anonymous" when blank
+	Body string `json:"body"`
+}
+
+func (s *server) listComments(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	comments, err := s.Store.Comments(r.Context(), id)
+	if err != nil {
+		storeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, comments)
+}
+
+func (s *server) postComment(w http.ResponseWriter, r *http.Request) {
+	id, ok := pathID(w, r)
+	if !ok {
+		return
+	}
+	var body commentBody
+	if !readValid(w, r, &body, validateComment) {
+		return
+	}
+	if !s.commentLimit.allow(clientIP(r)) {
+		writeError(w, http.StatusTooManyRequests, "too many comments, try again in a few minutes")
+		return
+	}
+	comment := store.Comment{Name: body.Name, Body: body.Body}
+	if err := s.Store.InsertComment(r.Context(), id, &comment); err != nil {
+		storeError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, comment)
+}

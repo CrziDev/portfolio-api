@@ -27,8 +27,10 @@ CREATE TABLE IF NOT EXISTS projects (
 	type        TEXT NOT NULL DEFAULT '',
 	language    TEXT NOT NULL DEFAULT '',
 	description TEXT NOT NULL DEFAULT '',
+	details     TEXT NOT NULL DEFAULT '',
 	stack       TEXT NOT NULL DEFAULT '[]',
 	image       TEXT NOT NULL DEFAULT '',
+	gallery     TEXT NOT NULL DEFAULT '[]',
 	url         TEXT NOT NULL DEFAULT ''
 );
 
@@ -54,6 +56,16 @@ CREATE TABLE IF NOT EXISTS project_stars (
 	visitor    TEXT NOT NULL,
 	PRIMARY KEY (project_id, visitor)
 );
+
+-- Visitors' comments on projects, shown oldest first.
+CREATE TABLE IF NOT EXISTS project_comments (
+	id         INTEGER PRIMARY KEY,
+	project_id INTEGER NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
+	name       TEXT NOT NULL,
+	body       TEXT NOT NULL,
+	created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS project_comments_by_project ON project_comments (project_id, id);
 
 CREATE TABLE IF NOT EXISTS sessions (
 	token_hash TEXT PRIMARY KEY,
