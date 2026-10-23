@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"portfolio-api/internal/store"
@@ -81,7 +82,7 @@ func deleteHandler(remove func(context.Context, int64) error) http.HandlerFunc {
 	}
 }
 
-// ---- Stars: any visitor can star a project, once per browser ----
+// ---- Stars: any visitor can star a project, once per browser and a few times per IP ----
 
 type starBody struct {
 	Visitor string `json:"visitor"` // a random ID the visitor's browser keeps
@@ -97,7 +98,11 @@ func (s *server) starProject(w http.ResponseWriter, r *http.Request) {
 	if !readValid(w, r, &body, validateStar) {
 		return
 	}
-	stars, err := s.Store.SetStar(r.Context(), id, body.Visitor, body.Starred)
+	stars, err := s.Store.SetStar(r.Context(), id, body.Visitor, clientIP(r), body.Starred)
+	if errors.Is(err, store.ErrStarLimit) {
+		writeError(w, http.StatusTooManyRequests, "this project has already been starred from your network")
+		return
+	}
 	if err != nil {
 		storeError(w, err)
 		return

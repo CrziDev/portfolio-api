@@ -15,7 +15,15 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var ErrNotFound = errors.New("not found")
+var (
+	ErrNotFound  = errors.New("not found")
+	ErrStarLimit = errors.New("star limit reached")
+)
+
+// StarsPerIP is how many different visitors on one IP address can star the same project.
+// It's above 1 so people sharing a network (an office, a phone carrier) can each star,
+// while clearing site data or opening a private window only works a few times.
+const StarsPerIP = 3
 
 //go:embed schema.sql
 var schema string
@@ -35,6 +43,7 @@ var seedUploads embed.FS
 var addedColumns = []struct{ table, column, definition string }{
 	{"projects", "details", "TEXT NOT NULL DEFAULT ''"},
 	{"projects", "gallery", "TEXT NOT NULL DEFAULT '[]'"},
+	{"project_stars", "ip", "TEXT NOT NULL DEFAULT ''"},
 }
 
 type Store struct {
@@ -302,16 +311,35 @@ func (s *Store) DeleteProject(ctx context.Context, id int64) error {
 
 // SetStar adds or removes one visitor's star on a project and returns the project's star count.
 // Starring twice, or unstarring a project the visitor hasn't starred, changes nothing.
-func (s *Store) SetStar(ctx context.Context, projectID int64, visitor string, starred bool) (int, error) {
+// A new star from an IP that already has StarsPerIP stars on the project returns ErrStarLimit.
+func (s *Store) SetStar(ctx context.Context, projectID int64, visitor, ip string, starred bool) (int, error) {
 	if err := s.projectExists(ctx, projectID); err != nil {
 		return 0, err
 	}
 
-	query := `DELETE FROM project_stars WHERE project_id = ? AND visitor = ?`
+	visitor, ip = hashToken(visitor), hashToken(ip)
 	if starred {
-		query = `INSERT OR IGNORE INTO project_stars (project_id, visitor) VALUES (?, ?)`
-	}
-	if _, err := s.db.ExecContext(ctx, query, projectID, hashToken(visitor)); err != nil {
+		res, err := s.db.ExecContext(ctx,
+			`INSERT OR IGNORE INTO project_stars (project_id, visitor, ip)
+			SELECT ?, ?, ? WHERE (SELECT COUNT(*) FROM project_stars WHERE project_id = ? AND ip = ?) < ?`,
+			projectID, visitor, ip, projectID, ip, StarsPerIP)
+		if err != nil {
+			return 0, err
+		}
+		if n, err := res.RowsAffected(); err != nil {
+			return 0, err
+		} else if n == 0 {
+			// Nothing was added: either this visitor already starred it, or the IP is at the limit.
+			var already bool
+			if err := s.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM project_stars WHERE project_id = ? AND visitor = ?)`,
+				projectID, visitor).Scan(&already); err != nil {
+				return 0, err
+			}
+			if !already {
+				return 0, ErrStarLimit
+			}
+		}
+	} else if _, err := s.db.ExecContext(ctx, `DELETE FROM project_stars WHERE project_id = ? AND visitor = ?`, projectID, visitor); err != nil {
 		return 0, err
 	}
 

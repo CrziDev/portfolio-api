@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -197,6 +198,43 @@ func TestStars(t *testing.T) {
 
 	// A starred project can still be deleted; its stars go with it.
 	expectStatus(t, api.do("DELETE", strings.TrimSuffix(path, "/star"), api.login(), nil), http.StatusNoContent)
+}
+
+// A private window gets a new visitor ID every time, so stars are also capped per IP.
+func TestStarLimitPerIP(t *testing.T) {
+	api := newTestAPI(t)
+	star := func(visitor, ip string, starred bool) int {
+		body := fmt.Sprintf(`{"visitor":%q,"starred":%t}`, visitor, starred)
+		req := httptest.NewRequest("POST", "/api/projects/1/star", strings.NewReader(body))
+		req.Header.Set("X-Forwarded-For", ip)
+		rec := httptest.NewRecorder()
+		api.handler.ServeHTTP(rec, req)
+		return rec.Code
+	}
+	visitor := func(i int) string { return fmt.Sprintf("00000000-0000-4000-8000-%012d", i) }
+
+	for i := range store.StarsPerIP {
+		if code := star(visitor(i), "203.0.113.1", true); code != http.StatusOK {
+			t.Fatalf("star %d: status = %d, want 200", i+1, code)
+		}
+	}
+	if code := star(visitor(99), "203.0.113.1", true); code != http.StatusTooManyRequests {
+		t.Errorf("one star too many: status = %d, want 429", code)
+	}
+	if code := star(visitor(0), "203.0.113.1", true); code != http.StatusOK {
+		t.Errorf("starring again from a browser that already starred: status = %d, want 200", code)
+	}
+	if code := star(visitor(99), "203.0.113.2", true); code != http.StatusOK {
+		t.Errorf("another network: status = %d, want 200", code)
+	}
+
+	// Unstarring frees up a place for the network.
+	if code := star(visitor(0), "203.0.113.1", false); code != http.StatusOK {
+		t.Fatalf("unstar: status = %d, want 200", code)
+	}
+	if code := star(visitor(98), "203.0.113.1", true); code != http.StatusOK {
+		t.Errorf("after an unstar: status = %d, want 200", code)
+	}
 }
 
 func TestComments(t *testing.T) {

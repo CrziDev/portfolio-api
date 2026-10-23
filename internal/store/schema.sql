@@ -50,10 +50,12 @@ CREATE TABLE IF NOT EXISTS experience (
 	highlights TEXT NOT NULL DEFAULT '[]'
 );
 
--- One row per visitor per starred project; `visitor` is a hash of the ID the visitor's browser made up.
+-- One row per visitor per starred project; `visitor` is a hash of the ID the visitor's browser made up,
+-- `ip` a hash of the address the star came from (empty for stars from before it was recorded).
 CREATE TABLE IF NOT EXISTS project_stars (
 	project_id INTEGER NOT NULL REFERENCES projects (id) ON DELETE CASCADE,
 	visitor    TEXT NOT NULL,
+	ip         TEXT NOT NULL DEFAULT '',
 	PRIMARY KEY (project_id, visitor)
 );
 
