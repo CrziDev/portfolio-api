@@ -64,7 +64,7 @@ func TestSeedUploads(t *testing.T) {
 	}
 
 	// A file already there is kept, not overwritten.
-	path := filepath.Join(dir, "pos-cover.webp")
+	path := filepath.Join(dir, strings.TrimPrefix(p.Projects[0].Image, "/uploads/"))
 	if err := os.WriteFile(path, []byte("replaced"), 0o644); err != nil {
 		t.Fatal(err)
 	}

@@ -85,15 +85,19 @@
         "Forge / DO",
         "GitHub Actions"
       ],
-      "image": "/uploads/realestate-erp-cover.webp",
+      "image": "/uploads/realestate-erp-cover-4b6e7bed.webp",
       "gallery": [
-        "/uploads/realestate-erp-01-site-plan-map.webp",
-        "/uploads/realestate-erp-02-dashboard.webp",
-        "/uploads/realestate-erp-03-equipment-insights.webp",
-        "/uploads/realestate-erp-04-sales-reports.webp",
-        "/uploads/realestate-erp-05-hr-kpi-dashboard.webp",
-        "/uploads/realestate-erp-06-org-chart.webp",
-        "/uploads/realestate-erp-07-inventory-reports.webp"
+        "/uploads/realestate-erp-01-welcome-535abcf3.webp",
+        "/uploads/realestate-erp-02-site-map-f4607871.webp",
+        "/uploads/realestate-erp-03-account-receivables-7daa2586.webp",
+        "/uploads/realestate-erp-04-purchase-orders-5cfcad47.webp",
+        "/uploads/realestate-erp-05-dashboard-3990ccd7.webp",
+        "/uploads/realestate-erp-06-general-ledger-eb836c9a.webp",
+        "/uploads/realestate-erp-07-accounts-payables-b4f10ab4.webp",
+        "/uploads/realestate-erp-08-inventory-insights-88b3c085.webp",
+        "/uploads/realestate-erp-09-hr-kpi-dashboard-6d4794bd.webp",
+        "/uploads/realestate-erp-10-equipment-insights-9cbeb0d6.webp",
+        "/uploads/realestate-erp-11-org-chart-79114e46.webp"
       ],
       "url": null
     },
@@ -108,14 +112,16 @@
         "PostgreSQL",
         "React"
       ],
-      "image": "/uploads/igaming-platform-cover.webp",
+      "image": "/uploads/igaming-platform-cover-32f8ddb1.webp",
       "gallery": [
-        "/uploads/igaming-platform-01-plinko.webp",
-        "/uploads/igaming-platform-02-lobby.webp",
-        "/uploads/igaming-platform-03-plinko-billiards.webp",
-        "/uploads/igaming-platform-04-plinko-tropical.webp",
-        "/uploads/igaming-platform-05-wallet.webp",
-        "/uploads/igaming-platform-06-admin.webp"
+        "/uploads/igaming-platform-01-plinko-21b72c4c.webp",
+        "/uploads/igaming-platform-02-lobby-b9d76a6c.webp",
+        "/uploads/igaming-platform-03-admin-a0926e83.webp",
+        "/uploads/igaming-platform-04-plinko-billiards-709ade5f.webp",
+        "/uploads/igaming-platform-05-plinko-tropical-6936c4e2.webp",
+        "/uploads/igaming-platform-06-wallet-b7188862.webp",
+        "/uploads/igaming-platform-07-mobile-01bd6848.webp",
+        "/uploads/igaming-platform-08-mobile-games-9ba8c9d1.webp"
       ],
       "url": null
     },
@@ -132,18 +138,19 @@
         "Livewire",
         "Blade"
       ],
-      "image": "/uploads/pos-cover.webp",
+      "image": "/uploads/pos-cover-0c9f56e9.webp",
       "gallery": [
-        "/uploads/pos-01-pos-panel.webp",
-        "/uploads/pos-02-dashboard-top.webp",
-        "/uploads/pos-03-supplies.webp",
-        "/uploads/pos-04-sales.webp",
-        "/uploads/pos-05-purchase-orders.webp",
-        "/uploads/pos-06-employees.webp",
-        "/uploads/pos-07-financial-statement.webp",
-        "/uploads/pos-08-stocks.webp",
-        "/uploads/pos-09-stock-transfers.webp",
-        "/uploads/pos-10-inventory-ledgers.webp"
+        "/uploads/pos-01-pos-panel-2d00e14f.webp",
+        "/uploads/pos-02-dashboard-top-547491ad.webp",
+        "/uploads/pos-03-supplies-68b91387.webp",
+        "/uploads/pos-04-sales-14fd55e0.webp",
+        "/uploads/pos-05-purchase-orders-5449dbd4.webp",
+        "/uploads/pos-06-employees-da75b338.webp",
+        "/uploads/pos-07-sales-reports-2886ca6d.webp",
+        "/uploads/pos-08-stocks-26638cf3.webp",
+        "/uploads/pos-09-stock-transfers-6142d81b.webp",
+        "/uploads/pos-10-inventory-ledgers-24e89575.webp",
+        "/uploads/pos-11-receipt-e80bc1cf.webp"
       ],
       "url": "https://github.com/CrziDev/POS"
     },
@@ -159,9 +166,9 @@
         "CSS",
         "WebExtensions"
       ],
-      "image": "/uploads/stash-00-cover.webp",
+      "image": "/uploads/stash-cover-c4a7ca01.webp",
       "gallery": [
-        "/uploads/stash-01-overview.webp"
+        "/uploads/stash-01-overview-00470ce8.webp"
       ],
       "url": "https://github.com/CrziDev/stash"
     },
@@ -176,8 +183,15 @@
         "CLI",
         "Claude Code Skill"
       ],
-      "image": "",
-      "gallery": [],
+      "image": "/uploads/frame-kit-cover-f8bb9847.webp",
+      "gallery": [
+        "/uploads/frame-kit-01-before-after-edb9de0f.webp",
+        "/uploads/frame-kit-02-dashboard-072c26d9.webp",
+        "/uploads/frame-kit-03-orders-662ab28c.webp",
+        "/uploads/frame-kit-04-paper-style-635307e6.webp",
+        "/uploads/frame-kit-05-landing-b1eac83c.webp",
+        "/uploads/frame-kit-06-receipt-4e42d429.webp"
+      ],
       "url": null
     }
   ],
