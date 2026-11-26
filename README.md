@@ -34,6 +34,6 @@ docker compose pull
 docker compose up -d
 ```
 
-Set `API_TAG` to pin a version. Caddy serves HTTPS on 8443 (443 is taken by another app) and needs port 80 for its certificate. Data lives in the `portfolio-data` volume.
+Set `API_TAG` to pin a version. Caddy serves HTTPS on 443 and needs port 80 for its certificate. Data lives in the `portfolio-data` volume.
 
-To try the compose setup locally, set `API_ADDRESS=http://localhost:8443` and run `docker compose up --build`.
+To try the compose setup locally, set `API_ADDRESS=http://localhost` and run `docker compose up --build`.
